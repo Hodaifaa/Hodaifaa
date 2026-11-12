@@ -5,11 +5,11 @@ import {
 } from './game.js';
 import { load, save, TIMER_CHOICES } from './store.js';
 import { sfx, buzz, setSound } from './sfx.js';
-import { h, icon, mascot, toast, openSheet, closeSheet, hasSheet, confirmSheet } from './dom.js';
+import { h, icon, toast, openSheet, closeSheet, hasSheet, confirmSheet } from './dom.js';
 
 const COLORS = [
-  '#ffd447', '#ff8a5c', '#3ee6b0', '#6cc5ff', '#c9a2ff', '#ff9ccb',
-  '#b4ec62', '#ffb84d', '#5fe3e8', '#ff7b8e', '#a9b6ff', '#f3ecd8',
+  '#e3b23c', '#d9785a', '#efe6d2', '#7fb2c4', '#9dbb8a', '#d99aa0',
+  '#c98f3a', '#5fa89c', '#b3a0c9', '#c25a4a', '#d8c39a', '#a9a85a',
 ];
 const MEDALS = ['🥇', '🥈', '🥉'];
 const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
@@ -48,7 +48,7 @@ const catById = (id) => allCats().find((c) => c.id === id);
 
 function selectedIds() {
   const valid = new Set(allCats().map((c) => c.id));
-  const picked = S.settings.cats ?? CATEGORIES.filter((c) => !c.spicy).map((c) => c.id);
+  const picked = S.settings.cats ?? CATEGORIES.map((c) => c.id);
   return picked.filter((id) => valid.has(id));
 }
 function playableCats() {
@@ -74,25 +74,6 @@ function shake(el) {
   void el.offsetWidth;
   el.classList.add('shake');
   buzz(40);
-}
-
-function confetti() {
-  if (calm) return;
-  const box = h('div', { class: 'confetti', 'aria-hidden': 'true' });
-  for (let i = 0; i < 70; i++) {
-    box.append(h('i', {
-      style: {
-        '--x': `${Math.random() * 100}%`,
-        '--d': `${Math.random() * 0.6}s`,
-        '--t': `${1.8 + Math.random() * 1.6}s`,
-        '--r': `${Math.random() * 720 - 360}deg`,
-        '--c': pick(COLORS),
-        '--s': `${7 + Math.random() * 8}px`,
-      },
-    }));
-  }
-  document.body.append(box);
-  setTimeout(() => box.remove(), 4200);
 }
 
 // ——————————————————— التنقّل ———————————————————
@@ -253,7 +234,7 @@ function roundBar() {
     h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'إنهاء الجولة', onclick: quitRound }, icon('x', 22)),
     h('div', { class: 'bar-mid' },
       h('span', { class: 'pill' }, `جولة ${r.n}`),
-      cat && h('span', { class: 'pill pill-cat' }, `${cat.emoji} ${cat.name}`),
+      cat && h('span', { class: 'pill pill-cat' }, cat.name),
     ),
     h('span', { class: 'bar-space' }),
   );
@@ -327,24 +308,23 @@ function Home() {
 
   function drawCats() {
     const sel = new Set(selectedIds());
-    const base = CATEGORIES.filter((c) => !c.spicy);
-    allBtn.textContent = base.every((c) => sel.has(c.id)) ? 'شيل الكل' : 'اختار الكل';
+    allBtn.textContent = CATEGORIES.every((c) => sel.has(c.id)) ? 'شيل الكل' : 'اختار الكل';
     catGrid.replaceChildren(...allCats().map((c) => {
       const ready = c.words.length >= MIN_WORDS;
-      const tile = h('button', {
-        class: `cat${c.spicy ? ' cat-spicy' : ''}${c.custom ? ' cat-custom' : ''}`,
+      const row = h('button', {
+        class: `cat${c.custom ? ' cat-custom' : ''}`,
         type: 'button',
-        'aria-pressed': String(sel.has(c.id) && ready),
+        role: 'checkbox',
+        'aria-checked': String(sel.has(c.id) && ready),
         onclick: () => toggleCat(c),
       },
-        h('span', { class: 'cat-emoji', 'aria-hidden': 'true' }, c.emoji),
-        h('span', { class: 'cat-name' }, c.name),
-        h('span', { class: 'cat-count' }, c.custom && !ready ? 'ضيف كلماتك' : wordsWord(c.words.length)),
-        h('span', { class: 'cat-check', 'aria-hidden': 'true' }, icon('check', 14)),
-        c.spicy && h('span', { class: 'cat-tag' }, '+18'),
+        h('span', { class: 'cat-box', 'aria-hidden': 'true' }, icon('check', 14)),
+        h('span', { class: 'cat-name' }, c.name, c.spicy && h('span', { class: 'cat-tag' }, '+18')),
+        h('span', { class: 'cat-dots', 'aria-hidden': 'true' }),
+        h('span', { class: 'cat-count' }, c.custom && !ready ? 'ضيف' : String(c.words.length)),
       );
-      if (!c.custom || !ready) return tile;
-      return h('div', { class: 'cat-wrap' }, tile,
+      if (!c.custom || !ready) return row;
+      return h('div', { class: 'cat-wrap' }, row,
         h('button', { class: 'cat-edit', type: 'button', 'aria-label': 'عدّل كلماتي', onclick: editCustom }, icon('edit', 16)));
     }));
   }
@@ -363,7 +343,7 @@ function Home() {
 
   function toggleAll() {
     const sel = new Set(selectedIds());
-    const base = CATEGORIES.filter((c) => !c.spicy).map((c) => c.id);
+    const base = CATEGORIES.map((c) => c.id);
     const allOn = base.every((id) => sel.has(id));
     base.forEach((id) => (allOn ? sel.delete(id) : sel.add(id)));
     setSelected(sel);
@@ -377,7 +357,7 @@ function Home() {
     const area = h('textarea', { class: 'input area', rows: '7', placeholder: 'منسف\nالبترا\nخالي أبو سمير…', 'aria-label': 'كلماتك' });
     area.value = S.custom.join('\n');
     const close = sheet({
-      title: 'كلماتي ✍️',
+      title: 'كلماتي',
       body: [
         h('p', { class: 'sheet-text' }, `كلمة بكل سطر، ${MIN_WORDS} عالأقل. خلّوها من نفس الجو (أسماء العيلة، نكت الشلّة، أماكنكم) عشان الكذّاب يقدر يمثّل.`),
         area,
@@ -393,7 +373,7 @@ function Home() {
             setSelected(sel);
             commit();
             close();
-            toast(S.custom.length >= MIN_WORDS ? `انحفظت ${wordsWord(S.custom.length)} ✅` : `بدّك ${MIN_WORDS} كلمات عالأقل`);
+            toast(S.custom.length >= MIN_WORDS ? `انحفظت ${wordsWord(S.custom.length)}` : `بدّك ${MIN_WORDS} كلمات عالأقل`);
             drawCats();
             drawFoot();
           },
@@ -451,11 +431,8 @@ function Home() {
       ),
     ),
     h('div', { class: 'hero' },
-      mascot(),
-      h('div', null,
-        h('h1', { class: 'display logo', tabindex: '-1', 'data-focus': '' }, 'الكذّاب'),
-        h('p', { class: 'tagline' }, 'كلكم بتعرفوا الكلمة… إلا واحد. اكشفوه قبل ما يحزرها!'),
-      ),
+      h('h1', { class: 'display logo', tabindex: '-1', 'data-focus': '' }, 'الكذّاب'),
+      h('p', { class: 'tagline' }, 'كلكم بتعرفوا الكلمة… إلا واحد. اكشفوه قبل ما يحزرها!'),
     ),
     h('section', { class: 'sec' },
       h('div', { class: 'sec-head' }, h('h2', { class: 'sec-title' }, 'اللاعبين'), count),
@@ -530,7 +507,6 @@ function Pass({ p, note, i, n, onGo, onBack }) {
   return h('section', { class: 'screen pass' },
     roundBar(),
     h('div', { class: 'center' },
-      h('p', { class: 'kicker' }, 'مرّروا التلفون لـ'),
       h('div', { class: 'halo' }, avatar(p, 'xl')),
       h('h1', { class: 'display big-name', tabindex: '-1', 'data-focus': '' }, p.name),
       h('p', { class: 'muted' }, note),
@@ -547,7 +523,7 @@ function PassReveal() {
   const r = S.round;
   return Pass({
     p: byId(r.order[r.idx]),
-    note: 'وخلّوا الشاشة سر 👀',
+    note: 'مرّروا التلفون، والشاشة سر.',
     i: r.idx,
     n: r.order.length,
     onGo: () => { ui.ready = true; sfx.tap(); render(); },
@@ -557,7 +533,7 @@ function PassReveal() {
 function PassAgain() {
   return Pass({
     p: byId(ui.repeek.id),
-    note: 'نظرة ثانية عالكلمة',
+    note: 'مرّروا التلفون لنظرة ثانية عالكلمة.',
     onGo: () => { ui.repeek.open = true; sfx.tap(); render(); },
     onBack: () => { ui.repeek = null; render(); },
   });
@@ -575,9 +551,7 @@ function Peek(p, again) {
   const secret = h('div', { class: 'peek-secret' });
   const card = h('button', { class: 'peek', type: 'button', 'aria-label': 'اضغط مطوّلاً لتشوف دورك' },
     h('div', { class: 'peek-cover' },
-      mascot(),
-      h('p', { class: 'display peek-cta' }, 'اضغط مطوّل'),
-      h('p', { class: 'peek-sub' }, icon('touch', 20), 'خلّي إصبعك عالكرت'),
+      h('p', { class: 'peek-plaque' }, icon('touch', 22), 'اضغط مطوّل لتشوف'),
     ),
     secret,
   );
@@ -589,9 +563,8 @@ function Peek(p, again) {
     if (card.classList.contains('on')) return;
     const size = [...r.word].length <= 5 ? 'xl' : [...r.word].length <= 9 ? 'lg' : [...r.word].length <= 14 ? 'md' : 'sm';
     secret.replaceChildren(
-      h('p', { class: 'kicker' }, isLiar ? 'الكلمة مخفية عنك' : 'الكلمة السرّية'),
       h('p', { class: `display secret-word ${isLiar ? 'lg' : size}` }, isLiar ? 'أنت الكذّاب' : r.word),
-      cat && h('p', { class: 'pill pill-cat' }, `الفئة: ${cat.emoji} ${cat.name}`),
+      h('p', { class: 'secret-meta' }, isLiar ? 'الكلمة مخفية عنك.' : 'هاي الكلمة السرّية.', cat && ` الفئة: ${cat.name}.`),
       h('p', { class: 'secret-tip' }, isLiar
         ? 'مثّل إنك عارف، والقط الكلمة من كلامهم.'
         : 'لمّح بدون ما تفضح الكلمة.'),
@@ -670,7 +643,7 @@ function Talk() {
   if (t) {
     const time = h('span', { class: 'timer-time', dir: 'ltr' });
     const state = h('span', { class: 'timer-state' });
-    timerEl = h('button', { class: 'timer', type: 'button', onclick: togglePause }, h('span', { class: 'timer-face' }, time, state));
+    timerEl = h('button', { class: 'timer', type: 'button', onclick: togglePause }, time, h('span', { class: 'timer-bar', 'aria-hidden': 'true' }, h('span')), state);
     const left = () => (t.left != null ? t.left : Math.max(0, Math.ceil((t.endsAt - Date.now()) / 1000)));
     const paint = () => {
       const s = left();
@@ -720,16 +693,14 @@ function Talk() {
       const [a, b] = r.pairs[r.pairIdx].map(byId);
       const isLast = r.pairIdx === r.pairs.length - 1;
       pairBox.replaceChildren(
-        h('p', { class: 'kicker' }, `سؤال ${r.pairIdx + 1} من ${r.pairs.length}`),
         h('div', { class: 'pair-row' }, who(a), h('span', { class: 'pair-arrow' }, 'يسأل', icon('next', 22)), who(b)),
-        h('p', { class: 'muted small' }, 'سؤال واحد عن الكلمة… بدون ما تنفضح.'),
+        h('p', { class: 'muted small' }, `سؤال ${r.pairIdx + 1} من ${r.pairs.length} — سؤال واحد عن الكلمة، بدون ما تنفضح.`),
         h('button', {
           class: 'btn btn-quiet', type: 'button', onclick: () => { r.pairIdx++; commit(); sfx.tap(); drawPair(); },
         }, isLast ? 'خلصت الأسئلة' : 'السؤال اللي بعده'),
       );
     } else {
       pairBox.replaceChildren(
-        h('p', { class: 'kicker' }, 'نقاش مفتوح'),
         h('p', { class: 'display open-talk' }, 'اسألوا مين ما بدكم… وشكّوا بالكل'),
         h('p', { class: 'muted small' }, 'لما تحسّوا إنكم عرفتوه، روحوا عالتصويت.'),
       );
@@ -753,7 +724,7 @@ function Talk() {
       ideaText.classList.add('pop');
       sfx.tap();
     },
-  }, icon('bulb', 20), h('span', null, 'أعطيني سؤال'));
+  }, icon('dice', 20), h('span', null, 'أعطيني سؤال'));
 
   function toVote() {
     r.phase = 'vote';
@@ -793,7 +764,7 @@ function PassVote() {
   const r = S.round;
   return Pass({
     p: byId(r.order[r.idx]),
-    note: 'وقت التصويت… بالسر 🤫',
+    note: 'مرّروا التلفون للتصويت بالسر.',
     i: r.idx,
     n: r.order.length,
     onGo: () => { ui.ready = true; sfx.tap(); render(); },
@@ -841,8 +812,7 @@ function Vote() {
   return h('section', { class: 'screen' },
     roundBar(),
     h('div', { class: 'head' },
-      h('p', { class: 'kicker' }, `صوت ${voter.name}`),
-      h('h1', { class: 'display title', tabindex: '-1', 'data-focus': '' }, 'مين الكذّاب برأيك؟'),
+      h('h1', { class: 'display title', tabindex: '-1', 'data-focus': '' }, `يا ${voter.name}، مين الكذّاب؟`),
     ),
     peopleGrid(S.players.filter((p) => p.id !== voter.id), (id) => { choice = id; cta.disabled = false; }),
     h('footer', { class: 'foot foot-sticky' }, dots(r.idx, r.order.length), cta),
@@ -868,8 +838,8 @@ function OpenVote() {
   return h('section', { class: 'screen' },
     roundBar(),
     h('div', { class: 'head' },
-      h('p', { class: 'kicker' }, 'عدّوا 1، 2، 3… وكل واحد يأشّر عالكذّاب'),
       h('h1', { class: 'display title', tabindex: '-1', 'data-focus': '' }, 'مين أخذ أكثر أصابع؟'),
+      h('p', { class: 'muted' }, 'عدّوا 1، 2، 3… وكل واحد يأشّر عالكذّاب.'),
     ),
     peopleGrid(S.players, (id) => { choice = id; cta.disabled = false; }, { value: null, label: 'تعادل — ما اتفقنا' }),
     h('footer', { class: 'foot foot-sticky' }, cta),
@@ -885,23 +855,20 @@ function Tally() {
     .map((p, i) => ({ p, i, n: t.counts[p.id] }))
     .sort((a, b) => b.n - a.n || a.i - b.i);
 
-  const list = h('ul', { class: 'tally' }, rows.map(({ p, n }) => h('li', { class: `tally-row${n === t.max && n > 0 ? ' top' : ''}` },
-    avatar(p, 'md'),
-    h('div', { class: 'tally-main' },
-      h('div', { class: 'tally-line' },
-        h('span', { class: 'tally-name' }, p.name),
-        h('span', { class: 'tally-voters' }, t.voters[p.id].map((id) => avatar(byId(id), 'xs'))),
-      ),
-      h('div', { class: 'meter' }, h('span', { style: { '--w': `${t.max ? (n / t.max) * 100 : 0}%` } })),
+  // لوحة طاولة الزهر: كل لاعب إله خانة، وكل صوت عليه حجر بينحط فيها.
+  const list = h('ol', { class: 'board' }, rows.map(({ p, n }) => h('li', { class: `point${n === t.max && n > 0 ? ' top' : ''}` },
+    h('span', { class: 'point-who' }, avatar(p, 'md'), h('span', { class: 'clip' }, p.name)),
+    h('span', { class: 'point-track' },
+      h('span', { class: 'point-tri', 'aria-hidden': 'true' }),
+      h('span', { class: 'point-stack' }, t.voters[p.id].map((id, j) => h('span', { class: 'point-chk', style: { '--i': String(j) } }, avatar(byId(id), 'xs')))),
     ),
-    h('span', { class: 'tally-n display' }, String(n)),
+    h('span', { class: 'point-n' }, String(n)),
   )));
   requestAnimationFrame(() => requestAnimationFrame(() => list.classList.add('grow')));
 
   return h('section', { class: 'screen' },
     roundBar(),
     h('div', { class: 'head' },
-      h('p', { class: 'kicker' }, 'الأصوات انعدّت'),
       h('h1', { class: 'display title', tabindex: '-1', 'data-focus': '' }, 'مين اتّهمتوا؟'),
     ),
     list,
@@ -933,7 +900,7 @@ function Unmask() {
   const slot = h('div', { class: 'slot' });
   const face = (p) => [h('div', { class: 'halo' }, avatar(p, 'xl')), h('p', { class: 'display big-name' }, p.name)];
   const verdict = h('div', { class: `verdict ${caught ? 'good' : 'bad'}`, hidden: true },
-    h('p', { class: 'display verdict-title' }, caught ? 'انكشف! 🎯' : 'فلت منكم! 😎'),
+    h('p', { class: 'display verdict-title' }, caught ? 'انكشف!' : 'فلت منكم!'),
     h('p', null, why),
   );
   const cta = h('button', {
@@ -949,7 +916,7 @@ function Unmask() {
     if (quiet) return;
     ui.unmasked = true;
     buzz(caught ? [60, 40, 120] : 200);
-    if (caught) { sfx.win(); confetti(); } else sfx.lose();
+    if (caught) sfx.win(); else sfx.lose();
   }
 
   if (ui.unmasked) {
@@ -969,7 +936,7 @@ function Unmask() {
   return h('section', { class: 'screen' },
     roundBar(),
     h('div', { class: 'center' },
-      h('h1', { class: 'kicker', tabindex: '-1', 'data-focus': '' }, 'الكذّاب هو…'),
+      h('h1', { class: 'lead-in', tabindex: '-1', 'data-focus': '' }, 'الكذّاب هو…'),
       slot,
       verdict,
     ),
@@ -1009,13 +976,12 @@ function Guess() {
   return h('section', { class: 'screen' },
     roundBar(),
     h('div', { class: 'head' },
-      h('p', { class: 'kicker' }, answered ? 'الكلمة كانت' : `الفرصة الأخيرة يا ${liar.name}`),
-      h('h1', { class: 'display title', tabindex: '-1', 'data-focus': '' }, answered ? r.word : 'شو كانت الكلمة؟'),
-      !answered && cat && h('p', { class: 'muted' }, `الفئة: ${cat.emoji} ${cat.name} — الباقي: ولا تلميح!`),
+      h('h1', { class: 'display title', tabindex: '-1', 'data-focus': '' }, answered ? r.word : `شو كانت الكلمة يا ${liar.name}؟`),
+      h('p', { class: 'muted' }, answered ? 'هاي كانت الكلمة.' : `${cat ? `الفئة: ${cat.name}. ` : ''}الباقي: ولا تلميح!`),
     ),
     grid,
     answered && h('div', { class: `verdict ${right ? 'bad' : 'good'}` },
-      h('p', { class: 'display verdict-title' }, right ? 'حزرها! 🧠' : 'ما حزرها! 🙈'),
+      h('p', { class: 'display verdict-title' }, right ? 'حزرها!' : 'ما حزرها!'),
       h('p', null, right ? `الكلمة انلقطت من كلامكم — نقطتين لـ ${liar.name}.` : `جواب ${liar.name} كان «${r.guess}».`),
     ),
     h('footer', { class: 'foot foot-sticky' },
@@ -1040,9 +1006,8 @@ function Summary() {
   return h('section', { class: 'screen' },
     roundBar(),
     h('div', { class: 'card word-card' },
-      h('p', { class: 'kicker' }, cat ? `${cat.emoji} ${cat.name}` : 'الكلمة'),
       h('p', { class: 'display word-big' }, r.word),
-      h('p', { class: 'muted small' }, `الكذّاب: ${nameOf(r.liar)} — ${r.result.caught ? 'انكشف' : 'فلت'}${r.result.guessed ? ' وحزر الكلمة' : ''}`),
+      h('p', { class: 'muted small' }, `${cat ? `${cat.name} · ` : ''}الكذّاب: ${nameOf(r.liar)} — ${r.result.caught ? 'انكشف' : 'فلت'}${r.result.guessed ? ' وحزر الكلمة' : ''}`),
     ),
     h('h1', { class: 'sec-title', tabindex: '-1', 'data-focus': '' }, 'نقاط الجولة'),
     h('ul', { class: 'rows' }, rows.map(({ p, got, why }) => h('li', { class: 'row' },
@@ -1089,9 +1054,9 @@ async function shareBoard() {
   }
   try {
     await navigator.clipboard.writeText(text);
-    toast('انتسخت النتيجة ✅');
+    toast('انتسخت النتيجة');
   } catch {
-    toast('ما زبط النسخ — صوّروا الشاشة 😅');
+    toast('ما زبط النسخ — صوّروا الشاشة');
   }
 }
 
@@ -1121,11 +1086,11 @@ function Board() {
       h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'شاركوا النتيجة', onclick: shareBoard }, icon('share', 22)),
     ),
     h('div', { class: 'head' },
-      h('p', { class: 'kicker' }, S.rounds ? `بعد ${roundsWord(S.rounds)}` : 'لسا ما لعبتوا ولا جولة'),
       h('h1', { class: 'display title', tabindex: '-1', 'data-focus': '' }, 'لوحة النتائج'),
+      h('p', { class: 'muted' }, S.rounds ? `بعد ${roundsWord(S.rounds)}` : 'لسا ما لعبتوا ولا جولة'),
     ),
     h('ul', { class: 'rows' }, rows.map(({ p, score, rank }) => h('li', { class: `row${rank === 1 && score > 0 ? ' lead' : ''}` },
-      h('span', { class: 'rank' }, badge({ rank, score })),
+      h('span', { class: 'rank' }, String(rank)),
       avatar(p, 'md'),
       h('div', { class: 'row-main' },
         h('span', { class: 'row-name' }, h('span', { class: 'clip' }, p.name)),

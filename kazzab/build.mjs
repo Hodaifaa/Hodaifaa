@@ -6,6 +6,7 @@ import { execFileSync } from 'node:child_process';
 import sharp from 'sharp';
 
 const OUT = 'public';
+const WORDMARK_WIDTH = 2103; // width of art/wordmark.txt in its own units
 const hash = (data, kind = 'sha256') => createHash(kind).update(data).digest('hex');
 
 await rm(OUT, { recursive: true, force: true });
@@ -13,44 +14,41 @@ await cp('site', OUT, { recursive: true, filter: (src) => !/(\.png|\.woff2|[\\/]
 
 // Fonts come from pinned npm packages; the checksums make sure they are the files the game was tested with.
 const FONTS = [
-  ['@fontsource-variable/marhey/files/marhey-arabic-wght-normal.woff2', 'marhey-arabic.woff2',
-    '20389b17106ed2ca92ef4f36e785e521a617dc13865d7c6e63a47c7ad37afff3'],
-  ['@fontsource-variable/baloo-bhaijaan-2/files/baloo-bhaijaan-2-arabic-wght-normal.woff2', 'baloo-arabic.woff2',
-    '643bd83b53ec8f25db2428e338673ddc85c345b976c449ccdad4d2b394f719e7'],
-  ['@fontsource-variable/baloo-bhaijaan-2/files/baloo-bhaijaan-2-latin-wght-normal.woff2', 'baloo-latin.woff2',
-    '332a4fc624d786925f03d480df6eb051aca5fb9f2a8f105f8300dcfac201425c'],
+  ['aref-ruqaa/files/aref-ruqaa-arabic-700-normal.woff2', 'ruqaa-arabic-700.woff2', 'a2d18c431048642fd695211a9466364a3d7287942d701b4f21bce8969ed491ac'],
+  ['almarai/files/almarai-arabic-400-normal.woff2', 'almarai-arabic-400.woff2', '530903c9168cfc13d3ef363b71c042d5c887476c4454a91223309465ae89c87f'],
+  ['almarai/files/almarai-arabic-700-normal.woff2', 'almarai-arabic-700.woff2', '006fba6fe32a900c60f154cc9e2e142bf075078dc97a94715dd9f1f5d4e4421e'],
+  ['almarai/files/almarai-arabic-800-normal.woff2', 'almarai-arabic-800.woff2', '7acac6ae3ea4d4eeb7c9b636856c46274f5904e02caff83a545d75ebb9754faf'],
+  ['almarai/files/almarai-latin-400-normal.woff2', 'almarai-latin-400.woff2', '6f289856f002502ea9cc6aa85c2fd509f8aa6c3a17b5adf08f2ccc148cfeea4f'],
+  ['almarai/files/almarai-latin-700-normal.woff2', 'almarai-latin-700.woff2', '53706a39de7c9d9b74032b0af6549cf9809e3f98b343ea5b054a25e10b1c2e7a'],
+  ['almarai/files/almarai-latin-800-normal.woff2', 'almarai-latin-800.woff2', '7f9acc49f37d11319a44ecf80edb205f11cffddcb3013a0bbbc6af46dcf12b9c'],
 ];
 await mkdir(`${OUT}/fonts`, { recursive: true });
 for (const [from, to, sha] of FONTS) {
-  const data = await readFile(`node_modules/${from}`);
+  const data = await readFile(`node_modules/@fontsource/${from}`);
   if (hash(data) !== sha) throw new Error(`Font file is not the tested one: ${from}`);
   await writeFile(`${OUT}/fonts/${to}`, data);
 }
-await cp('node_modules/@fontsource-variable/marhey/LICENSE', `${OUT}/fonts/OFL-Marhey.txt`);
-await cp('node_modules/@fontsource-variable/baloo-bhaijaan-2/LICENSE', `${OUT}/fonts/OFL-BalooBhaijaan2.txt`);
+await cp('node_modules/@fontsource/aref-ruqaa/LICENSE', `${OUT}/fonts/OFL-ArefRuqaa.txt`);
+await cp('node_modules/@fontsource/almarai/LICENSE', `${OUT}/fonts/OFL-Almarai.txt`);
 
-// PNG icons and the link-preview image are drawn from the mascot in icon.svg.
+// PNG icons and the link-preview image are drawn from icon.svg and the wordmark outline.
 const iconSvg = await readFile('site/icons/icon.svg', 'utf8');
-const face = iconSvg.match(/<g transform="[^"]*">([\s\S]*?)<\/g>/)[1];
+const squareIcon = iconSvg.replace('rx="112"', 'rx="0"');
 const wordmark = (await readFile('art/wordmark.txt', 'utf8')).trim();
-const fullBleed = (scale, x, y) =>
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#1a1530"/>' +
-  `<circle cx="420" cy="70" r="190" fill="#8f73ff" opacity=".28"/><g transform="translate(${x} ${y}) scale(${scale})">${face}</g></svg>`;
+const checker = (x, fill) =>
+  `<circle cx="${x}" cy="470" r="34" fill="${fill}"/><circle cx="${x}" cy="470" r="25" fill="none" stroke="#1f1a0c" stroke-opacity=".34" stroke-width="3"/>`;
 const preview =
-  '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630"><defs>' +
-  '<radialGradient id="a" cx="1140" cy="0" r="940" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8f73ff" stop-opacity=".42"/>' +
-  '<stop offset="1" stop-color="#8f73ff" stop-opacity="0"/></radialGradient>' +
-  '<radialGradient id="b" cx="0" cy="630" r="800" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ff5d73" stop-opacity=".3"/>' +
-  '<stop offset="1" stop-color="#ff5d73" stop-opacity="0"/></radialGradient></defs>' +
-  '<rect width="1200" height="630" fill="#130f20"/><rect width="1200" height="630" fill="url(#a)"/><rect width="1200" height="630" fill="url(#b)"/>' +
-  `<g transform="translate(704 130) scale(2.9)">${face}</g>` +
-  `<g transform="translate(100 392) scale(.196)"><path fill="#ffd447" d="${wordmark}"/></g></svg>`;
+  '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="#10302a"/>' +
+  '<g fill="#9a3028" stroke="#e3b23c" stroke-width="10"><circle cx="0" cy="0" r="120"/><circle cx="1200" cy="0" r="120"/>' +
+  '<circle cx="0" cy="630" r="120"/><circle cx="1200" cy="630" r="120"/></g>' +
+  `<g transform="translate(600 330) scale(.3) translate(${-WORDMARK_WIDTH / 2} 0)"><path fill="#e3b23c" d="${wordmark}"/></g>` +
+  ['#e3b23c', '#d9785a', '#efe6d2', '#7fb2c4', '#9dbb8a'].map((fill, i) => checker(440 + i * 80, fill)).join('') + '</svg>';
 const png = (svg, width, height, name) =>
   sharp(Buffer.from(svg), { density: 144 }).resize(width, height).png({ compressionLevel: 9 }).toFile(`${OUT}/icons/${name}`);
 await png(iconSvg, 192, 192, 'icon-192.png');
 await png(iconSvg, 512, 512, 'icon-512.png');
-await png(fullBleed(2.3, 108, 104), 512, 512, 'maskable-512.png');
-await png(fullBleed(2.9, 72, 60), 180, 180, 'apple-touch-icon.png');
+await png(squareIcon, 512, 512, 'maskable-512.png');
+await png(squareIcon, 180, 180, 'apple-touch-icon.png');
 await png(preview, 1200, 630, 'og.png');
 
 // The offline cache is named after the content, so a changed file always means a fresh cache.

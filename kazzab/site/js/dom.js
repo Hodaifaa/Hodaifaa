@@ -52,7 +52,7 @@ const ICONS = {
   play: '<path d="M8 5.5l10.5 6.5L8 18.5v-13z"/>',
   home: '<path d="M4 11l8-7 8 7v9h-5.5v-5.5h-5V20H4v-9z"/>',
   again: '<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4.6h-4.6"/>',
-  bulb: '<path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2h5c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>',
+  dice: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 8.5v.1M15.5 8.5v.1M12 12v.1M8.5 15.5v.1M15.5 15.5v.1"/>',
   trash: '<path d="M5 7h14M10 7V4.5h4V7M7 7l.8 12.5h8.4L17 7"/>',
   touch: '<circle cx="12" cy="12" r="2.6"/><path d="M6.2 15.5a6.8 6.8 0 1 1 11.6 0M3.4 18a10.4 10.4 0 1 1 17.2 0"/>',
   vote: '<path d="M4 13.5V20h16v-6.5M7.5 13.5h9M9 4.5h6l1.5 9h-9l1.5-9z"/>',
@@ -63,23 +63,6 @@ export function icon(name, size = 24) {
     `<svg class="ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" ` +
       `stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`,
   );
-}
-
-// شخصية اللعبة: وجه متوتر ومناخيره طويلة.
-const MASCOT =
-  '<svg class="mascot" viewBox="0 0 128 128" aria-hidden="true">' +
-  '<circle cx="50" cy="66" r="40" fill="#ffd447" stroke="#17112b" stroke-width="5"/>' +
-  '<path d="M26 31l15-5M52 27l15 4" stroke="#17112b" stroke-width="5" stroke-linecap="round" fill="none"/>' +
-  '<ellipse cx="35" cy="47" rx="8" ry="9.5" fill="#fff" stroke="#17112b" stroke-width="4"/>' +
-  '<ellipse cx="60" cy="47" rx="8" ry="9.5" fill="#fff" stroke="#17112b" stroke-width="4"/>' +
-  '<circle cx="38.5" cy="49" r="4" fill="#17112b"/><circle cx="63.5" cy="49" r="4" fill="#17112b"/>' +
-  '<rect x="54" y="61" width="68" height="17" rx="8.5" fill="#ff5d73" stroke="#17112b" stroke-width="5"/>' +
-  '<path d="M28 91q5.5-6 11 0t11 0 11 0" stroke="#17112b" stroke-width="4.5" stroke-linecap="round" fill="none"/>' +
-  '<path d="M11 27c-6 9-6 15 0 15s6-6 0-15z" fill="#6cc5ff" stroke="#17112b" stroke-width="3.5" stroke-linejoin="round"/>' +
-  '</svg>';
-
-export function mascot() {
-  return fromMarkup(MASCOT);
 }
 
 // ——— تنبيه صغير ———
