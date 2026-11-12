@@ -361,7 +361,7 @@ h1:focus-visible, .sheet:focus-visible { outline: none; }
 .foot-note { min-height: 1.5em; color: var(--dim); font-size: 15px; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
 .foot-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-/* ——— الكرت المقلوب: بلاط القهوة من فوق، والكلمة تحته ——— */
+/* ——— الكرت المقلوب: وجه سادة من فوق، والكلمة تحته ——— */
 .peek {
   position: relative;
   flex: 1;
@@ -389,15 +389,7 @@ h1:focus-visible, .sheet:focus-visible { outline: none; }
   text-align: center;
 }
 .peek-cover {
-  --t: 56px;
-  background-color: #efe6d2;
-  background-image:
-    radial-gradient(circle at 50% 50%, #9a3028 0 13%, transparent 13.5%),
-    radial-gradient(circle at 0 0, #183f37 0 34%, #e3b23c 34.5% 41%, transparent 41.5%),
-    radial-gradient(circle at 100% 0, #183f37 0 34%, #e3b23c 34.5% 41%, transparent 41.5%),
-    radial-gradient(circle at 0 100%, #183f37 0 34%, #e3b23c 34.5% 41%, transparent 41.5%),
-    radial-gradient(circle at 100% 100%, #183f37 0 34%, #e3b23c 34.5% 41%, transparent 41.5%);
-  background-size: var(--t) var(--t);
+  background: var(--ground-3);
   transition: opacity .14s, transform .3s var(--ease);
 }
 .peek-plaque {
