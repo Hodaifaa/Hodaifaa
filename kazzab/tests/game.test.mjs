@@ -1,11 +1,11 @@
 // node --test tests/
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CATEGORIES, QUESTION_IDEAS } from '../game/js/words.js';
+import { CATEGORIES, QUESTION_IDEAS } from '../site/js/words.js';
 import {
   GUESS_OPTIONS, MIN_WORDS, POINTS, shuffle, pickWord, guessOptions, askingPairs,
   tally, isCaught, scoreRound, cleanName, parseWords,
-} from '../game/js/game.js';
+} from '../site/js/game.js';
 
 const ids = ['a', 'b', 'c', 'd'];
 
